@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import pickle
 
-class mainGui():
+class mainGui(object):
     def __init__(self, master):
         self.master = master
         self.master.title("Porównywanie ofert")
@@ -35,14 +35,14 @@ class mainGui():
         self.master.config(menu=self.menuBar)
         self.dbFileSelected = getExcelDBPath()
 
-
-
-
     def setDBLocalization(self):
         self.dbFileSelected = filedialog.askopenfilename()
 
     def checkDBLocalization(self):
         messagebox.showinfo("Ścieżka do bazy danych", self.dbFileSelected)
+
+    def getDBLocalization(self):
+        return self.dbFileSelected
 
     def printInfo(self):
         infoFile = open('info.txt', 'r', encoding='utf-8')
@@ -84,6 +84,7 @@ class guiTable(mainGui):
         self.style = ttk.Style()
         self.style.theme_use('clam')
 
+
         self.tableColumns = ["Producent", "Produkt", "Cena"]
         self.tree = ttk.Treeview(master, column=self.tableColumns, show='headings')
 
@@ -121,6 +122,4 @@ class guiTable(mainGui):
 if __name__ == "__main__":
     guiWindow = tk.Tk()
     frame=mainGui(guiWindow)
-
-
     guiWindow.mainloop()

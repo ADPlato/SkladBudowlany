@@ -14,8 +14,17 @@ def saveToExcel(excelName,excelPath, data):
     today=today.strftime("%Y_%m_%d_")
     excelWorkBook.save(excelPath+'\\'+today+excelName+'.xls')
 
-def readFromExcel():
-    pass
+def readFromExcel(excelFilePath):
+    data=[]
+    excelWorkBook=xlrd.open_workbook(excelFilePath)
+    excelWorkSheet=excelWorkBook.sheet_by_index(0)
+    for col in range(excelWorkSheet.ncols):
+        rows=[]
+        for row in excelWorkSheet.row(col):
+            rows.append(row.value)
+        data.append(rows)
+    return data
+
 
 def getExcelDBPath():
     return os.path.abspath("db_xls.xls")

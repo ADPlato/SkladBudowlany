@@ -1,4 +1,4 @@
-from excelToSql import getExcelDBPath, saveToExcel
+from excelToSql import getExcelDBPath, saveToExcel, readFromExcel
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
@@ -7,7 +7,6 @@ class mainGui(object):
     def __init__(self, master):
         self.master = master
         self.master.title("Porównywanie ofert")
-        self.master.geometry("700x400")
         self.menuBar = tk.Menu(self.master)
 
         self.fileMenu = tk.Menu(self.menuBar, tearoff=0)
@@ -15,9 +14,8 @@ class mainGui(object):
         self.helpMenu = tk.Menu(self.menuBar, tearoff=0)
 
         self.fileMenu.add_command(label="Nowy", command=self.createNewTable)
-        self.fileMenu.add_command(label="Zapisz", command = self.saveTable)
-        self.fileMenu.add_command(label="Wczytaj", command = self.loadTable)
-        self.fileMenu.add_command(label="Zamknij tabele", command=self.closeTable)
+        self.fileMenu.add_command(label="Zapisz", command=self.saveTable)
+        self.fileMenu.add_command(label="Wczytaj", command=self.loadTable)
         self.fileMenu.add_command(label="Zamknij", command=self.master.destroy)
 
         self.dbMenu.add_command(label="Wybierz baze danych", command=self.setDBLocalization)
@@ -36,7 +34,7 @@ class mainGui(object):
         self.dbFileSelected = getExcelDBPath()
 
     def getDBHeadings(self):
-        self.tableColumns = ["Producent", "Produkt", "Wycena",'cos']
+        self.tableColumns = ["Producent", "Produkt", "Wycena"]
 
     def setDBLocalization(self):
         self.dbFileSelected = filedialog.askopenfilename()
@@ -56,39 +54,39 @@ class mainGui(object):
         messagebox.showinfo("Informacje", progInfo)
 
     def createNewTable(self):
-        self.newTable=guiTable(self.master)
-
+        self.newTable = guiTable(self.master)
 
     def saveTable(self):
 
-        self.excelFilePath=filedialog.askdirectory()
-        recordTable=[]
-        items=self.newTable.tree.get_children()
+        excelFilePath = filedialog.askdirectory()
+        recordTable = []
+        items = self.tree.get_children()
         recordTable.append(self.tableColumns)
 
         for x in items:
-            record=self.newTable.tree.item(x)
+            record = self.tree.item(x)
             recordTable.append(record['values'])
-        saveToExcel('a',self.excelFilePath,recordTable)
+        saveToExcel('a', excelFilePath, recordTable)
 
     def loadTable(self):
-        pass
-
-    def closeTable(self):
-        pass
+        self.newTable = guiTable(self.master)
+        excelFilePath = filedialog.askopenfilename()
+        excelLoadedData=readFromExcel(excelFilePath)
+        excelLoadedHeadings=excelLoadedData[0]
+        excelLoadedData=excelLoadedData[1:]
+        for rows in excelLoadedData:
+            self.newTable.tree.insert('', 'end', text="1", values=(rows))
 
 
 class guiTable(mainGui):
 
-    def __init__ (self, master):
-        mainGui.__init__(self,master)
+    def __init__(self, master):
+        mainGui.__init__(self, master)
         mainGui.getDBHeadings(self)
         self.master = master
         self.style = ttk.Style()
         self.style.theme_use('clam')
 
-
-        #self.tableColumns = ["Producent", "Produkt", "Cena"]
         self.tree = ttk.Treeview(master, column=self.tableColumns, show='headings')
 
         self.scrollbar = ttk.Scrollbar(self.master)
@@ -96,12 +94,11 @@ class guiTable(mainGui):
         self.scrollbar.configure(command=self.tree.yview)
         self.tree.configure(yscrollcommand=self.scrollbar.set)
 
-        self.tree.heading("#1", text="Producent")
-        self.tree.heading("#2", text="Produkt")
-        self.tree.heading("#3", text="Cena")
+        for head in range(len(self.tableColumns)):
+            self.tree.heading(f'#{head + 1}', text=self.tableColumns[head])
 
         for x in range(5):
-            self.tree.insert('', 'end', text="1", values=(f'{x}:{x}', f'{x}:{x+x}', f'{x}:{x*x}'))
+            self.tree.insert('', 'end', text="1", values=(f'{x}:{x}', f'{x}:{x + x}', f'{x}:{x * x}'))
 
         self.scrollbar.grid(column=3, row=0, sticky='ns')
         self.tree.grid(column=0, row=0, columnspan=3, sticky='nsew')
@@ -109,40 +106,39 @@ class guiTable(mainGui):
         self.master.grid_columnconfigure(0, weight=1)
         self.master.grid_rowconfigure(0, weight=1)
 
-        self.newButton = tk.Button(self.master,text='Dodaj', command = self.addrecord)
-        self.deleteButton = tk.Button(self.master, text='Usuń', command = self.removeRow)
+        self.newButton = tk.Button(self.master, text='Dodaj', command=self.addrecord)
+        self.deleteButton = tk.Button(self.master, text='Usuń', command=self.removeRow)
 
-        self.newButton.grid(column =0 , row=1, columnspan=4, sticky ='ew')
-        self.deleteButton.grid(column =0 , row=2, columnspan=4, sticky ='ew')
+        self.newButton.grid(column=0, row=1, columnspan=4, sticky='ew')
+        self.deleteButton.grid(column=0, row=2, columnspan=4, sticky='ew')
 
     def removeRow(self):
-        selected=self.tree.focus()
+        selected = self.tree.focus()
         if selected != '':
             self.tree.delete(selected)
 
     def addrecord(self):
-        self.newWindow=addWindow(self.master)
+        self.newWindow = addWindow(self.master)
 
 
 class addWindow(guiTable):
     def __init__(self, master):
-        guiTable.__init__(self,master)
-        self.master=master
-        self.addWindow=tk.Toplevel(master)
+        guiTable.__init__(self, master)
+        self.master = master
+        self.addWindow = tk.Toplevel(master)
         self.addWindow.title("Dodaj record")
 
-        labels=[]
-        entryLabels=[]
+        labels = []
+        entryLabels = []
         for columns in self.tableColumns:
             entryLabels.append(tk.Entry(self.addWindow))
-            labels.append(tk.Label(self.addWindow,text=columns))
+            labels.append(tk.Label(self.addWindow, text=columns))
         for griding in range(len(self.tableColumns)):
             labels[griding].grid(column=griding, row=0)
             entryLabels[griding].grid(column=griding, row=1, sticky='nswe')
 
 
 if __name__ == "__main__":
-
     guiWindow = tk.Tk()
-    frame=mainGui(guiWindow)
+    frame = mainGui(guiWindow)
     guiWindow.mainloop()

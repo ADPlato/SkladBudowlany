@@ -40,7 +40,7 @@ def getExcelData(excelPath):
     return productsDB
 
 def createSqlTable(name):
-    pass
+    con=sqlite3.connect('producents.db')
 
 def connectToSql(name):
     pass

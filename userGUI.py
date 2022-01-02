@@ -7,7 +7,9 @@ class mainGui(object):
     def __init__(self, master):
         self.master = master
         self.master.title("Porównywanie ofert")
+        self.master.iconbitmap('SKSM_logo.ico')
         self.menuBar = tk.Menu(self.master)
+
 
         self.fileMenu = tk.Menu(self.menuBar, tearoff=0)
         self.dbMenu = tk.Menu(self.menuBar, tearoff=0)
@@ -72,7 +74,7 @@ class mainGui(object):
         self.newTable = guiTable(self.master)
         excelFilePath = filedialog.askopenfilename()
         excelLoadedData=readFromExcel(excelFilePath)
-        excelLoadedHeadings=excelLoadedData[0]
+        self.excelLoadedHeadings=excelLoadedData[0]
         excelLoadedData=excelLoadedData[1:]
         for rows in excelLoadedData:
             self.newTable.tree.insert('', 'end', text="1", values=(rows))
@@ -81,24 +83,20 @@ class mainGui(object):
 class guiTable(mainGui):
 
     def __init__(self, master):
-        mainGui.__init__(self, master)
+        #mainGui.__init__(self, master)
         mainGui.getDBHeadings(self)
         self.master = master
         self.style = ttk.Style()
         self.style.theme_use('clam')
 
+
         self.tree = ttk.Treeview(master, column=self.tableColumns, show='headings')
-
         self.scrollbar = ttk.Scrollbar(self.master)
-
         self.scrollbar.configure(command=self.tree.yview)
         self.tree.configure(yscrollcommand=self.scrollbar.set)
 
-        for head in range(len(self.tableColumns)):
-            self.tree.heading(f'#{head + 1}', text=self.tableColumns[head])
-
-        for x in range(5):
-            self.tree.insert('', 'end', text="1", values=(f'{x}:{x}', f'{x}:{x + x}', f'{x}:{x * x}'))
+        for nr, head in enumerate(self.tableColumns):
+            self.tree.heading(f'#{nr+1}', text=head)
 
         self.scrollbar.grid(column=3, row=0, sticky='ns')
         self.tree.grid(column=0, row=0, columnspan=3, sticky='nsew')
@@ -118,24 +116,39 @@ class guiTable(mainGui):
             self.tree.delete(selected)
 
     def addrecord(self):
-        self.newWindow = addWindow(self.master)
+        addWindow(self.master,self.tree)
+
+    def addrow(self, values):
+        self.tree.insert('', 'end', text="1", values=(values))
+
 
 
 class addWindow(guiTable):
-    def __init__(self, master):
-        guiTable.__init__(self, master)
+    def __init__(self, master, tree):
+        self.tree=tree
+        super().getDBHeadings()
         self.master = master
         self.addWindow = tk.Toplevel(master)
         self.addWindow.title("Dodaj record")
 
-        labels = []
-        entryLabels = []
+        self.labels = []
+        self.entryLabels = []
         for columns in self.tableColumns:
-            entryLabels.append(tk.Entry(self.addWindow))
-            labels.append(tk.Label(self.addWindow, text=columns))
+            self.entryLabels.append(tk.Entry(self.addWindow))
+            self.labels.append(tk.Label(self.addWindow, text=columns))
         for griding in range(len(self.tableColumns)):
-            labels[griding].grid(column=griding, row=0)
-            entryLabels[griding].grid(column=griding, row=1, sticky='nswe')
+            self.labels[griding].grid(column=griding, row=0)
+            self.entryLabels[griding].grid(column=griding, row=1, sticky='nswe')
+
+        entryButton=tk.Button(self.addWindow, text="Dodaj", command=self.addValues)
+        entryButton.grid(column=0, row=2, columnspan=len(self.tableColumns), sticky='we')
+
+    def addValues(self):
+        record=[]
+        for label in self.entryLabels:
+            record.append(label.get())
+        guiTable.addrow(self,record)
+
 
 
 if __name__ == "__main__":
